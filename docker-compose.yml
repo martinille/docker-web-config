@@ -1,0 +1,48 @@
+services:
+
+    php:
+        build:
+            context: .
+            dockerfile: docker/php/Dockerfile
+        volumes:
+            - ./app:/var/www/html
+            - ./docker/php/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro
+        env_file:
+            - .env
+
+    nginx:
+        image: nginx:latest
+        depends_on:
+            - php
+        ports:
+            - 80:80
+            - 443:443
+        volumes:
+            - ./app:/var/www/html
+            - ./docker/nginx:/etc/nginx/conf.d:ro
+            - ./docker/nginx/certs:/etc/nginx/certs:ro
+        env_file:
+            - .env
+
+    mariadb:
+        image: mariadb:10.6
+        volumes:
+            - ./docker/mariadb_data:/var/lib/mysql
+        environment:
+            - MYSQL_ROOT_PASSWORD=${DATABASE_PASS}
+
+    mailpit:
+        image: docker.io/axllent/mailpit:latest
+        ports:
+            - 1025:1025
+            - 8025:8025
+
+    node:
+        build:
+            context: .
+            dockerfile: docker/node/Dockerfile
+        volumes:
+            - ./app:/var/www/html
+        ports:
+            - 5173:5173
+        working_dir: /var/www/html
